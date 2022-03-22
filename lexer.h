@@ -34,7 +34,7 @@ class lexer {
   const char* ptr_;
   const char* token_start_ = nullptr;
 
-  const char* end() const { return data_.data() + data_.size(); }
+  auto end() const -> const char* { return data_.data() + data_.size(); }
 
   void skip_line_comment();
   auto skip_block_comment() -> bool;
