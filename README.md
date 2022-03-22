@@ -1,1 +1,1 @@
-# lex
+# lex: a simple lexer
