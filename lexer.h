@@ -22,23 +22,26 @@
 */
 
 #include <string_view>
-#include <vector>
 
 #include "source_location.h"
 
 namespace lex {
 
-enum class token { unknown, number, string, identifier, eof };
+enum class token_kind { unknown, number, string, identifier, eof };
+
+struct token {
+  token_kind kind;
+  source_location loc;
+};
 
 class lexer {
  private:
-  source src_;
+  std::string_view source_;
+  source_location start_;
   const char* ptr_;
   const char* token_start_ = nullptr;
 
-  auto end() const -> const char* {
-    return src_.text.data() + src_.text.size();
-  }
+  auto end() const -> const char* { return source_.data() + source_.size(); }
 
   void skip_line_comment();
   auto skip_block_comment() -> bool;

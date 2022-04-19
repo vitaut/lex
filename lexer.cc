@@ -59,7 +59,10 @@ auto lex_float_constant(const char* p) -> const char* {
 
 }  // namespace
 
-lexer::lexer(source src) : src_(std::move(src)) { ptr_ = src_.text.data(); }
+lexer::lexer(source src)
+    : source_(src.text), start_(src.start), ptr_(src.text.data()) {
+  assert(src.text.back() == '\0');
+}
 
 void lexer::skip_line_comment() { ptr_ = std::find(ptr_, end() - 1, '\n'); }
 
@@ -126,16 +129,17 @@ auto lexer::get_next_token() -> token {
   skip_whitespace_or_comment();
 
   token_start_ = ptr_;
+  auto loc = start_;
 
   char c = *ptr_++;
   if (is_letter(c)) {
     // Lex an identifier.
     while (is_letter(*ptr_)) ++ptr_;
-    return token::identifier;
+    return {token_kind::identifier, loc};
   } else if (c == '.') {
     if (const char* p = lex_float_constant(ptr_)) {
       ptr_ = p;
-      return token::number;
+      return {token_kind::number, loc};
     }
   } else if (is_dec_digit(c)) {
     if (c == '0') {
@@ -146,14 +150,14 @@ auto lexer::get_next_token() -> token {
         if (!is_hex_digit(*ptr_)) break;
         ptr_ += 2;
         while (is_hex_digit(*ptr_)) ++ptr_;
-        return token::number;
+        return {token_kind::number, loc};
       case 'b':
       case 'B':
         // Lex a binary constant.
         if (!is_bin_digit(*ptr_)) break;
         ptr_ += 2;
         while (is_bin_digit(*ptr_)) ++ptr_;
-        return token::number;
+        return {token_kind::number, loc};
       }
     }
     // Lex a decimal, octal or floating-point constant.
@@ -163,14 +167,14 @@ auto lexer::get_next_token() -> token {
     case '.':
       if (const char* p = lex_float_constant(dec_end + 1)) {
         ptr_ = p;
-        return token::number;
+        return {token_kind::number, loc};
       }
       break;
     case 'e':
     case 'E':
       if (const char* p = lex_float_exponent(dec_end)) {
         ptr_ = p;
-        return token::number;
+        return {token_kind::number, loc};
       }
       break;
     }
@@ -179,19 +183,19 @@ auto lexer::get_next_token() -> token {
     } else {
       while (is_oct_digit(*ptr_)) ++ptr_;
     }
-    return token::number;
+    return {token_kind::number, loc};
   } else if (c == '"' || c == '\'') {
     // Lex a string literal.
     const char* p = std::find(ptr_, end() - 1, c);
     if (*p) {
       ptr_ = p + 1;
-      return token::string;
+      return {token_kind::string, loc};
     }
   } else if (!c && ptr_ == end()) {
     --ptr_;  // Put '\0' back in case get_next_token() is called again.
-    return token::eof;
+    return {token_kind::eof, loc};
   }
-  return token::unknown;
+  return {token_kind::unknown, loc};
 }
 
 }  // namespace lex
@@ -203,7 +207,11 @@ auto main(int argc, char** argv) -> int {
   }
   auto source_mgr = lex::source_manager();
   auto lexer = lex::lexer(source_mgr.from_file(argv[1]));
-  auto token = lex::token();
-  while ((token = lexer.get_next_token()) != lex::token::eof)
-    printf("token: %d %s\n", token, std::string(lexer.token_string()).c_str());
+  for (;;) {
+    auto token = lexer.get_next_token();
+    auto loc = lex::resolved_location(token.loc, source_mgr);
+    printf("%s:%d:%d: %d: %s\n", loc.file_name(), loc.line(), loc.column(),
+           token.kind, std::string(lexer.token_string()).c_str());
+    if (token.kind == lex::token_kind::eof) break;
+  }
 }
