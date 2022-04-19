@@ -17,7 +17,7 @@ class source_manager {
   struct source_info {
     std::string file_name;
     std::vector<char> text;
-    std::vector<uint_least32_t> line_offsets;  // Lazily computed line offsets.
+    std::vector<uint_least32_t> line_offsets;
   };
   std::vector<source_info> sources_;
 
@@ -38,6 +38,12 @@ class source_location {
 
   source_location(uint_least32_t source_id, uint_least32_t offset)
       : source_id_(source_id), offset_(offset) {}
+
+ public:
+  friend source_location operator+(source_location lhs, int rhs) {
+    lhs.offset_ += rhs;
+    return lhs;
+  }
 };
 
 // A resolved (source) location that provides the file name, line and column.

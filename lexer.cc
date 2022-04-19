@@ -129,7 +129,7 @@ auto lexer::get_next_token() -> token {
   skip_whitespace_or_comment();
 
   token_start_ = ptr_;
-  auto loc = start_;
+  auto loc = start_ + (token_start_ - source_.data());
 
   char c = *ptr_++;
   if (is_letter(c)) {
