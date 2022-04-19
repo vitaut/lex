@@ -11,15 +11,22 @@ namespace lex {
 
 enum class source_id : uint_least32_t {};
 
+struct source {
+  std::vector<char> text;
+};
+
 class source_manager {
  private:
-  struct source {
+  struct source_info {
     std::string file_name;
     std::vector<uint_least32_t> line_offsets;
   };
-  std::vector<source> sources_;
+  std::vector<source_info> sources_;
 
   friend class resolved_location;
+
+ public:
+  auto from_file(const char* path) -> source;
 };
 
 // A lightweight source location that can be resolved via source_manager.

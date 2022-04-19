@@ -15,30 +15,6 @@
 namespace lex {
 
 namespace {
-class file {
- private:
-  FILE* file_;
-
- public:
-  file(const char* filename, const char* mode) : file_(fopen(filename, mode)) {
-    if (!file_)
-      throw std::runtime_error(std::string("failed to open file: ") + filename);
-  }
-  ~file() {
-    int result = fclose(file_);
-    assert(result == 0);
-  }
-
-  file(const file&) = delete;
-  void operator=(const file&) = delete;
-
-  auto read(void* buffer, size_t size, size_t count) -> size_t {
-    size_t result = fread(buffer, size, count, file_);
-    if (result == 0 && !feof(file_))
-      throw std::runtime_error("error reading from file");
-    return result;
-  }
-};
 
 auto is_whitespace(char c) -> bool {
   return c == ' ' || c == '\t' || c == '\r' || c == '\n';
@@ -83,15 +59,7 @@ auto lex_float_constant(const char* p) -> const char* {
 
 }  // namespace
 
-lexer::lexer(const char* path) {
-  auto f = file(path, "rb");
-  constexpr size_t buffer_size = 4096;
-  char buffer[buffer_size];
-  while (size_t count = f.read(buffer, 1, buffer_size))
-    data_.insert(data_.end(), buffer, buffer + count);
-  data_.push_back('\0');
-  ptr_ = data_.data();
-}
+lexer::lexer(source src) : src_(std::move(src)) { ptr_ = src_.text.data(); }
 
 void lexer::skip_line_comment() { ptr_ = std::find(ptr_, end() - 1, '\n'); }
 
@@ -228,12 +196,13 @@ auto lexer::get_next_token() -> token {
 
 }  // namespace lex
 
-int main(int argc, char** argv) {
+auto main(int argc, char** argv) -> int {
   if (argc != 2) {
     printf("usage: %s FILE\n", argv[0]);
     return 0;
   }
-  auto lexer = lex::lexer(argv[1]);
+  auto source_mgr = lex::source_manager();
+  auto lexer = lex::lexer(source_mgr.from_file(argv[1]));
   auto token = lex::token();
   while ((token = lexer.get_next_token()) != lex::token::eof)
     printf("token: %d %s\n", token, std::string(lexer.token_string()).c_str());

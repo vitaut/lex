@@ -24,17 +24,21 @@
 #include <string_view>
 #include <vector>
 
+#include "source_location.h"
+
 namespace lex {
 
 enum class token { unknown, number, string, identifier, eof };
 
 class lexer {
  private:
-  std::vector<char> data_;
+  source src_;
   const char* ptr_;
   const char* token_start_ = nullptr;
 
-  auto end() const -> const char* { return data_.data() + data_.size(); }
+  auto end() const -> const char* {
+    return src_.text.data() + src_.text.size();
+  }
 
   void skip_line_comment();
   auto skip_block_comment() -> bool;
@@ -42,7 +46,7 @@ class lexer {
   auto lex_doc_comment() -> bool;
 
  public:
-  explicit lexer(const char* path);
+  explicit lexer(source src);
 
   auto get_next_token() -> token;
 
