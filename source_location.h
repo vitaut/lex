@@ -24,7 +24,7 @@ class source_manager {
   friend class resolved_location;
 
  public:
-  auto from_file(const char* path) -> source;
+  auto add_file(const char* path) -> source;
 };
 
 // A lightweight source location that can be resolved via source_manager.

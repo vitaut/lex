@@ -36,7 +36,7 @@ class file {
 
 }  // namespace
 
-auto source_manager::from_file(const char* path) -> source {
+auto source_manager::add_file(const char* path) -> source {
   auto src = source_info();
   src.file_name = path;
 

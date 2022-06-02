@@ -206,7 +206,7 @@ auto main(int argc, char** argv) -> int {
     return 0;
   }
   auto source_mgr = lex::source_manager();
-  auto lexer = lex::lexer(source_mgr.from_file(argv[1]));
+  auto lexer = lex::lexer(source_mgr.add_file(argv[1]));
   for (;;) {
     auto token = lexer.get_next_token();
     auto loc = lex::resolved_location(token.loc, source_mgr);
